@@ -47,11 +47,13 @@
                 <div class="mb-3">
                     <label for="reminderAmount" class="form-label">Amount (₹)</label>
                     <input type="number" class="form-control" id="reminderAmount" placeholder="e.g., 1500" required>
+                    <div id="amountError" class="form-text text-danger d-none">Negative numbers and 0 are not allowed.</div>
                 </div>
 
                 <div class="mb-3">
                     <label for="reminderDate" class="form-label">Due Date</label>
                     <input type="date" class="form-control" id="reminderDate" required>
+                    <div id="dateError" class="form-text text-danger d-none">Past dates are not allowed.</div>
                 </div>
 
                 <div class="mb-3">
@@ -71,14 +73,6 @@
             <li class="list-group-item text-center">No reminders yet — add one above!</li>
         </ul>
     </div>
-
-    <!-- Notifications Section -->
-    <!-- <div class="container mt-5">
-        <h3 class="text-center mb-3">Notifications</h3>
-        <ul class="list-group" id="notificationList">
-            <li class="list-group-item text-center">No notifications yet!</li>
-        </ul>
-    </div> -->
 
     <!-- Footer -->
     <footer class="text-center mt-5">
@@ -110,8 +104,7 @@
 
         function checkDuePayments() {
             const reminders = getUserReminders();
-            const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
-
+            const today = new Date().toISOString().split("T")[0];
             reminders.forEach(reminder => {
                 if (reminder.date === today) {
                     const notification = `Payment due today: ${reminder.title} - ₹${reminder.amount}`;
@@ -120,25 +113,67 @@
             });
         }
 
+        function escapeHTML(str) {
+            return str.replace(/[&<>"']/g, function (match) {
+                return {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;"
+                }[match];
+            });
+        }
+
         document.getElementById("reminderForm").addEventListener("submit", function (e) {
             e.preventDefault();
 
+            const amountInput = document.getElementById("reminderAmount");
+            const amountError = document.getElementById("amountError");
+            const amountValue = parseFloat(amountInput.value);
+
+            const dateInput = document.getElementById("reminderDate");
+            const dateError = document.getElementById("dateError");
+            const selectedDate = new Date(dateInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let hasError = false;
+
+            if (isNaN(amountValue) || amountValue <= 0) {
+                amountError.classList.remove("d-none");
+                hasError = true;
+            } else {
+                amountError.classList.add("d-none");
+            }
+
+            if (selectedDate < today) {
+                dateError.classList.remove("d-none");
+                hasError = true;
+            } else {
+                dateError.classList.add("d-none");
+            }
+
+            if (hasError) return;
+
             const newReminder = {
-                title: document.getElementById("reminderTitle").value,
-                amount: document.getElementById("reminderAmount").value,
-                date: document.getElementById("reminderDate").value,
-                notes: document.getElementById("reminderNotes").value
+                title: document.getElementById("reminderTitle").value.trim(),
+                amount: amountValue,
+                date: dateInput.value,
+                notes: document.getElementById("reminderNotes").value.trim()
             };
 
             const reminders = getUserReminders();
             reminders.push(newReminder);
             saveUserReminders(reminders);
 
-            // Save notification
             const notification = `Reminder set: ${newReminder.title} - ₹${newReminder.amount} due on ${newReminder.date}`;
             saveNotification(notification);
 
             renderReminders();
+            document.getElementById("reminderForm").reset();
+            amountError.classList.add("d-none");
+            dateError.classList.add("d-none");
         });
 
         function deleteReminder(index) {
@@ -152,24 +187,35 @@
             const reminders = getUserReminders();
             const list = document.getElementById("reminderList");
 
-            // Clear the current list
             list.innerHTML = "";
 
             if (reminders.length === 0) {
-                // Show a message if no reminders exist
                 list.innerHTML = "<li class='list-group-item text-center'>No reminders yet — add one above!</li>";
             } else {
-                // Render each reminder
                 reminders.forEach((reminder, index) => {
-                    list.innerHTML += `
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong>${reminder.title}</strong> - ₹${reminder.amount} due on ${reminder.date}
-                                <p class="text-muted mb-0">${reminder.notes}</p>
-                            </div>
-                            <button class="btn btn-danger btn-sm" onclick="deleteReminder(${index})">Delete</button>
-                        </li>
-                    `;
+                    const li = document.createElement("li");
+                    li.className = "list-group-item d-flex justify-content-between align-items-center";
+
+                    const contentDiv = document.createElement("div");
+                    const title = document.createElement("strong");
+                    title.textContent = `${reminder.title}`;
+                    const info = document.createTextNode(` - ₹${reminder.amount} due on ${reminder.date}`);
+                    const notes = document.createElement("p");
+                    notes.className = "text-muted mb-0";
+                    notes.textContent = reminder.notes;
+
+                    contentDiv.appendChild(title);
+                    contentDiv.appendChild(info);
+                    contentDiv.appendChild(notes);
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.className = "btn btn-danger btn-sm";
+                    deleteBtn.textContent = "Delete";
+                    deleteBtn.onclick = () => deleteReminder(index);
+
+                    li.appendChild(contentDiv);
+                    li.appendChild(deleteBtn);
+                    list.appendChild(li);
                 });
             }
         }
@@ -183,14 +229,11 @@
             const notifications = getUserNotifications();
             const notificationList = document.getElementById("notificationList");
 
-            // Clear the current list
             notificationList.innerHTML = "";
 
             if (notifications.length === 0) {
-                // Show a message if no notifications exist
                 notificationList.innerHTML = "<li class='list-group-item text-center'>No notifications yet!</li>";
             } else {
-                // Render each notification
                 notifications.forEach(notification => {
                     notificationList.innerHTML += `<li class="list-group-item">${notification}</li>`;
                 });
@@ -203,7 +246,9 @@
             window.location.href = "login.html";
         }
 
-        // Check for due payments on page load
+        // Set today's date as min for the due date input
+        document.getElementById("reminderDate").min = new Date().toISOString().split("T")[0];
+
         checkDuePayments();
         renderReminders();
         renderNotifications();
