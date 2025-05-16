@@ -5,7 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Expense Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .password-wrapper {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+        }
+    </style>
 </head>
 <body>
 
@@ -26,13 +40,15 @@
                     <label for="email" class="form-label">Email Address</label>
                     <input type="email" class="form-control" id="email" required>
                 </div>
-                <div class="mb-3">
+                <div class="mb-3 password-wrapper">
                     <label for="password" class="form-label">Password</label>
                     <input type="password" class="form-control" id="password" required>
+                    <i class="bi bi-eye toggle-password" onclick="togglePassword('password', this)"></i>
                 </div>
-                <div class="mb-3">
+                <div class="mb-3 password-wrapper">
                     <label for="confirm-password" class="form-label">Confirm Password</label>
                     <input type="password" class="form-control" id="confirm-password" required>
+                    <i class="bi bi-eye toggle-password" onclick="togglePassword('confirm-password', this)"></i>
                 </div>
                 <button type="submit" class="btn btn-success w-100">Sign Up</button>
                 <p class="text-center mt-3">
@@ -43,6 +59,19 @@
     </div>
 
     <script>
+        function togglePassword(fieldId, iconElement) {
+            const input = document.getElementById(fieldId);
+            if (input.type === "password") {
+                input.type = "text";
+                iconElement.classList.remove("bi-eye");
+                iconElement.classList.add("bi-eye-slash");
+            } else {
+                input.type = "password";
+                iconElement.classList.remove("bi-eye-slash");
+                iconElement.classList.add("bi-eye");
+            }
+        }
+
         document.getElementById("signupForm").addEventListener("submit", function(event) {
             event.preventDefault();
 
@@ -50,6 +79,12 @@
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
             const confirmPassword = document.getElementById("confirm-password").value;
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert("Please enter a valid email address.");
+                return;
+            }
 
             if (password !== confirmPassword) {
                 alert("Passwords do not match.");
