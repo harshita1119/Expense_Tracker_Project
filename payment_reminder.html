@@ -140,13 +140,15 @@
 
             let hasError = false;
 
-            if (isNaN(amountValue) || amountValue <= 0) {
+            // Validate amount input
+            if (isNaN(amountValue) || amountValue <= 0 || amountInput.value.includes('e') || amountInput.value.includes('.') && amountInput.value.indexOf('.') !== amountInput.value.lastIndexOf('.')) {
                 amountError.classList.remove("d-none");
                 hasError = true;
             } else {
                 amountError.classList.add("d-none");
             }
 
+            // Validate date input
             if (selectedDate < today) {
                 dateError.classList.remove("d-none");
                 hasError = true;
@@ -174,6 +176,19 @@
             document.getElementById("reminderForm").reset();
             amountError.classList.add("d-none");
             dateError.classList.add("d-none");
+        });
+
+        // Input validation to ensure only valid number
+        document.getElementById("reminderAmount").addEventListener("input", function (e) {
+            const value = e.target.value;
+
+            // Remove non-numeric characters, allow one decimal point
+            e.target.value = value.replace(/[^0-9.]/g, '');
+
+            // If more than one decimal point is entered, remove the extra
+            if (e.target.value.split('.').length > 2) {
+                e.target.value = e.target.value.substring(0, e.target.value.length - 1);
+            }
         });
 
         function deleteReminder(index) {
