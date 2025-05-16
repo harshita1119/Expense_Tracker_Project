@@ -91,10 +91,18 @@
 
       if (userIndex !== -1) {
         let newName = document.getElementById("profileName").value.trim();
+
         if (newName === "") {
           alert("Name cannot be empty.");
           return;
         }
+
+        // ✅ Name validation: only alphabets and spaces allowed
+        if (!/^[A-Za-z\s]+$/.test(newName)) {
+          alert("Please enter a valid name using only letters and spaces.");
+          return;
+        }
+
         users[userIndex].name = newName;
         localStorage.setItem("users", JSON.stringify(users));
         alert("Profile name updated successfully!");
